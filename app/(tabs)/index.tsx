@@ -1,7 +1,7 @@
-import CustomBottomSheet from "@/components/BottomSheet";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import BottomSheet, { BottomSheetView } from "@gorhom/bottom-sheet";
 import { Picker } from "@react-native-picker/picker";
-import React, { useState } from "react";
+import React, { useCallback, useMemo, useRef, useState } from "react";
 import { FlatList, StyleSheet, Text, TextInput, View } from "react-native";
 import { TouchableOpacity } from "react-native-gesture-handler";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -46,7 +46,8 @@ const dayMap = {
   Su: 0, // Sunday
 };
 
-const IndexAppScreen: React.FC = () => {
+export default function IndexAppScreen() {
+  const snapPoints = useMemo(() => ["25%", "50%", "70%", "90%"], []);
   const [searchRoom, setSearchRoom] = useState<string>("");
   const [selectedDay, setSelectedDay] = useState<number>(new Date().getDay());
   const [selectedHour, setSelectedHour] = useState<number>(
@@ -96,6 +97,15 @@ const IndexAppScreen: React.FC = () => {
     );
   };
 
+  const bottomSheetRef = useRef<BottomSheet>(null);
+
+  const [bottomSheetState, setbottomSheetState] = useState<number>(0);
+  // callbacks
+  const handleSheetChanges = useCallback((index: number) => {
+    console.log("handleSheetChanges", index);
+    setbottomSheetState(index);
+  }, []);
+
   return (
     <SafeAreaView edges={["top"]} style={styles.container}>
       <Text style={styles.headerText}>Class Schedule</Text>
@@ -113,7 +123,9 @@ const IndexAppScreen: React.FC = () => {
 
         <TouchableOpacity
           onPress={() => {
-            <CustomBottomSheet />;
+            if(bottomSheetState == -1) bottomSheetRef.current?.snapToIndex(1);
+            else
+            bottomSheetRef.current?.close();
           }}
         >
           <MaterialCommunityIcons
@@ -129,8 +141,10 @@ const IndexAppScreen: React.FC = () => {
         <View style={{ flexDirection: "column", flex: 1 }}>
           <Text style={styles.filterLabel}>Select Day:</Text>
           <Picker
-            dropdownIconColor={"#fff"}
-            mode="dropdown"
+            enabled={false}
+            focusable={false}
+            collapsable={true}
+            mode="dialog"
             selectedValue={selectedDay}
             onValueChange={(value) => setSelectedDay(value)}
             style={styles.picker}
@@ -181,7 +195,6 @@ const IndexAppScreen: React.FC = () => {
         </View>
       </View>
 
-      
       {/* Display the list of classes in the searched room */}
       <FlatList
         data={searchByRoom(searchRoom)}
@@ -208,11 +221,28 @@ const IndexAppScreen: React.FC = () => {
           </View>
         )}
       />
+      <BottomSheet
+        snapPoints={snapPoints}
+        index={0}
+        animateOnMount={false}
+        enablePanDownToClose={true}
+        ref={bottomSheetRef}
+        onChange={handleSheetChanges}
+      >
+        <BottomSheetView style={styles.contentContainer}>
+          <Text>Awesome 🎉</Text>
+        </BottomSheetView>
+      </BottomSheet>
     </SafeAreaView>
   );
-};
+}
 
 const styles = StyleSheet.create({
+  contentContainer: {
+    flex: 1,
+    padding: 36,
+    alignItems: "center",
+  },
   container: {
     backgroundColor: "black",
     flex: 1,
@@ -282,5 +312,3 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
 });
-
-export default IndexAppScreen;
